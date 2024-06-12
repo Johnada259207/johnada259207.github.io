@@ -118,7 +118,22 @@ function detectDoor() {
         currentLevel = (currentLevel + 1) % levels.length;
         player.x = 50;
         player.y = 550;
+        shufflePlatforms(currentLevel);
     }
+}
+
+function shufflePlatforms(level) {
+    const platforms = levels[level].platforms;
+    platforms.forEach(platform => {
+        platform.x = Math.random() * (canvas.width - platform.width);
+        platform.y = Math.random() * (canvas.height - platform.height - 50) + 50;
+    });
+
+    // Ensure door is placed on a platform
+    const door = levels[level].door;
+    const randomPlatform = platforms[Math.floor(Math.random() * platforms.length)];
+    door.x = randomPlatform.x + randomPlatform.width / 2 - door.width / 2;
+    door.y = randomPlatform.y - door.height;
 }
 
 function update() {
@@ -193,9 +208,32 @@ function loadGame() {
     }
 }
 
+// Mobile controls
+const leftButton = document.createElement('button');
+leftButton.innerHTML = 'Left';
+document.body.appendChild(leftButton);
+leftButton.addEventListener('touchstart', moveLeft);
+leftButton.addEventListener('touchend', stop);
+
+const rightButton = document.createElement('button');
+rightButton.innerHTML = 'Right';
+document.body.appendChild(rightButton);
+rightButton.addEventListener('touchstart', moveRight);
+rightButton.addEventListener('touchend', stop);
+
+const jumpButton = document.createElement('button');
+jumpButton.innerHTML = 'Jump';
+document.body.appendChild(jumpButton);
+jumpButton.addEventListener('touchstart', jump);
+
 document.addEventListener('keydown', keyDown);
 document.addEventListener('keyup', keyUp);
 saveButton.addEventListener('click', saveGame);
 loadButton.addEventListener('click', loadGame);
+
+// Background music
+const bgMusic = new Audio('assets/background-music.mp3');
+bgMusic.loop = true;
+bgMusic.play();
 
 update();
