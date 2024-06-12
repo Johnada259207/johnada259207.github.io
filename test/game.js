@@ -30,28 +30,29 @@ doorSprite.src = 'assets/door.png';
 const background = new Image();
 background.src = 'assets/background.png';
 
-const levels = [
-    {
-        platforms: [
-            { x: 0, y: 580, width: 800, height: 20 },
-            { x: 100, y: 450, width: 200, height: 20 },
-            { x: 400, y: 350, width: 200, height: 20 },
-            { x: 650, y: 250, width: 100, height: 20 }
-        ],
-        door: { x: 750, y: 210, width: 40, height: 40 }
-    },
-    {
-        platforms: [
-            { x: 0, y: 580, width: 800, height: 20 },
-            { x: 150, y: 450, width: 200, height: 20 },
-            { x: 450, y: 350, width: 200, height: 20 },
-            { x: 700, y: 250, width: 100, height: 20 }
-        ],
-        door: { x: 50, y: 210, width: 40, height: 40 }
-    }
-];
+const doorSound = new Audio('assets/door-sound.mp3');
 
 let currentLevel = 0;
+let platformsPerLevel = 4;
+
+function createLevel(platformCount) {
+    const platforms = [];
+    for (let i = 0; i < platformCount; i++) {
+        platforms.push({
+            x: Math.random() * (canvas.width - 100),
+            y: Math.random() * (canvas.height - 100),
+            width: 100,
+            height: 20
+        });
+    }
+    const door = { x: 0, y: 0, width: 40, height: 40 };
+    const randomPlatform = platforms[Math.floor(Math.random() * platforms.length)];
+    door.x = randomPlatform.x + randomPlatform.width / 2 - door.width / 2;
+    door.y = randomPlatform.y - door.height;
+    return { platforms, door };
+}
+
+let levels = [createLevel(platformsPerLevel)];
 
 function drawPlayer() {
     ctx.drawImage(player.sprite, player.x, player.y, player.width, player.height);
@@ -119,25 +120,13 @@ function detectDoor() {
         player.y < door.y + door.height &&
         player.y + player.height > door.y
     ) {
-        currentLevel = (currentLevel + 1) % levels.length;
+        doorSound.play();
+        currentLevel++;
+        platformsPerLevel++;
+        levels.push(createLevel(platformsPerLevel));
         player.x = 50;
         player.y = 550;
-        shufflePlatforms(currentLevel);
     }
-}
-
-function shufflePlatforms(level) {
-    const platforms = levels[level].platforms;
-    platforms.forEach(platform => {
-        platform.x = Math.random() * (canvas.width - platform.width);
-        platform.y = Math.random() * (canvas.height - platform.height - 50) + 50;
-    });
-
-    // Ensure door is placed on a platform
-    const door = levels[level].door;
-    const randomPlatform = platforms[Math.floor(Math.random() * platforms.length)];
-    door.x = randomPlatform.x + randomPlatform.width / 2 - door.width / 2;
-    door.y = randomPlatform.y - door.height;
 }
 
 function update() {
@@ -205,7 +194,8 @@ function saveGame() {
             x: player.x,
             y: player.y
         },
-        currentLevel
+        currentLevel,
+        platformsPerLevel
     };
     localStorage.setItem('gameState', JSON.stringify(gameState));
 }
@@ -216,26 +206,56 @@ function loadGame() {
         player.x = gameState.player.x;
         player.y = gameState.player.y;
         currentLevel = gameState.currentLevel;
+        platformsPerLevel = gameState.platformsPerLevel;
+        levels = [createLevel(platformsPerLevel)];
     }
 }
 
 // Mobile controls
-const leftButton = document.createElement('button');
-leftButton.innerHTML = 'Left';
-document.body.appendChild(leftButton);
-leftButton.addEventListener('touchstart', moveLeft);
-leftButton.addEventListener('touchend', stop);
+canvas.addEventListener('touchstart', handleTouchStart);
+canvas.addEventListener('touchmove', handleTouchMove);
+canvas.addEventListener('touchend', handleTouchEnd);
 
-const rightButton = document.createElement('button');
-rightButton.innerHTML = 'Right';
-document.body.appendChild(rightButton);
-rightButton.addEventListener('touchstart', moveRight);
-rightButton.addEventListener('touchend', stop);
+let touchStartX = null;
+let touchStartY = null;
 
-const jumpButton = document.createElement('button');
-jumpButton.innerHTML = 'Jump';
-document.body.appendChild(jumpButton);
-jumpButton.addEventListener('touchstart', jump);
+function handleTouchStart(e) {
+    const touch = e.touches[0];
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+}
+
+function handleTouchMove(e) {
+    if (!touchStartX || !touchStartY) return;
+
+    const touch = e.touches[0];
+    const touchEndX = touch.clientX;
+    const touchEndY = touch.clientY;
+
+    const diffX = touchEndX - touchStartX;
+    const diffY = touchEndY - touchStartY;
+
+    if (Math.abs(diffX) > Math.abs(diffY)) {
+        // Horizontal movement
+        if (diffX > 0) {
+            moveRight();
+        } else {
+            moveLeft();
+        }
+    } else {
+        // Vertical movement
+        if (diffY < 0) {
+            jump();
+        }
+    }
+
+    touchStartX = null;
+    touchStartY = null;
+}
+
+function handleTouchEnd() {
+    stop();
+}
 
 document.addEventListener('keydown', keyDown);
 document.addEventListener('keyup', keyUp);
