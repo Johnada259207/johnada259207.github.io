@@ -2,8 +2,8 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
 const BLOCK_SIZE = 20;
-const ROWS = canvas.height / BLOCK_SIZE;
-const COLS = canvas.width / BLOCK_SIZE;
+const ROWS = Math.floor(canvas.height / BLOCK_SIZE);
+const COLS = Math.floor(canvas.width / BLOCK_SIZE);
 
 let grid = [];
 for (let row = 0; row < ROWS; row++) {
