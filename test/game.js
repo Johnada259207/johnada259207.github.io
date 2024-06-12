@@ -13,6 +13,8 @@ const player = {
     dy: 0,
     gravity: 0.5,
     jumpPower: -10,
+    jumps: 0,
+    maxJumps: 2,
     onGround: false,
     sprite: new Image()
 };
@@ -95,6 +97,7 @@ function detectCollisions() {
             player.dy = 0;
             player.y = platform.y - player.height;
             player.onGround = true;
+            player.jumps = 0; // Reset jumps when on the ground
         }
     });
 
@@ -104,6 +107,7 @@ function detectCollisions() {
         player.y = canvas.height - player.height;
         player.dy = 0;
         player.onGround = true;
+        player.jumps = 0; // Reset jumps when on the ground
     }
 }
 
@@ -157,8 +161,9 @@ function moveLeft() {
 }
 
 function jump() {
-    if (player.onGround) {
+    if (player.jumps < player.maxJumps) {
         player.dy = player.jumpPower;
+        player.jumps++;
         player.onGround = false;
     }
 }
@@ -172,8 +177,14 @@ function keyDown(e) {
         moveRight();
     } else if (e.key === 'ArrowLeft' || e.key === 'Left') {
         moveLeft();
-    } else if (e.key === 'ArrowUp' || e.key === 'Up') {
+    } else if (e.key === 'ArrowUp' || e.key === 'Up' || e.key === ' ') {
         jump();
+    } else if (e.key === '>') {
+        player.width += 10;
+        player.height += 10;
+    } else if (e.key === '<') {
+        player.width -= 10;
+        player.height -= 10;
     }
 }
 
