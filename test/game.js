@@ -24,6 +24,9 @@ player.sprite.src = 'assets/player.png';
 const platformSprite = new Image();
 platformSprite.src = 'assets/platform.png';
 
+const killerPlatformSprite = new Image();
+killerPlatformSprite.src = 'assets/killer-platform.png';
+
 const doorSprite = new Image();
 doorSprite.src = 'assets/door.png';
 
@@ -31,6 +34,7 @@ const background = new Image();
 background.src = 'assets/background.png';
 
 const doorSound = new Audio('assets/door-sound.mp3');
+const deathSound = new Audio('assets/death-sound.mp3');
 
 let currentLevel = 0;
 let platformsPerLevel = 4;
@@ -42,9 +46,23 @@ function createLevel(platformCount) {
             x: Math.random() * (canvas.width - 100),
             y: Math.random() * (canvas.height - 100),
             width: 100,
-            height: 20
+            height: 20,
+            type: 'normal' // normal platform
         });
     }
+
+    // Add some killer platforms
+    const killerPlatformsCount = Math.floor(platformCount / 3);
+    for (let i = 0; i < killerPlatformsCount; i++) {
+        platforms.push({
+            x: Math.random() * (canvas.width - 100),
+            y: Math.random() * (canvas.height - 100),
+            width: 100,
+            height: 20,
+            type: 'killer' // killer platform
+        });
+    }
+
     const door = { x: 0, y: 0, width: 40, height: 40 };
     const randomPlatform = platforms[Math.floor(Math.random() * platforms.length)];
     door.x = randomPlatform.x + randomPlatform.width / 2 - door.width / 2;
@@ -60,7 +78,11 @@ function drawPlayer() {
 
 function drawPlatforms() {
     levels[currentLevel].platforms.forEach(platform => {
-        ctx.drawImage(platformSprite, platform.x, platform.y, platform.width, platform.height);
+        if (platform.type === 'normal') {
+            ctx.drawImage(platformSprite, platform.x, platform.y, platform.width, platform.height);
+        } else if (platform.type === 'killer') {
+            ctx.drawImage(killerPlatformSprite, platform.x, platform.y, platform.width, platform.height);
+        }
     });
 }
 
@@ -95,10 +117,15 @@ function detectCollisions() {
             player.y < platform.y + platform.height &&
             player.y + player.height > platform.y
         ) {
-            player.dy = 0;
-            player.y = platform.y - player.height;
-            player.onGround = true;
-            player.jumps = 0; // Reset jumps when on the ground
+            if (platform.type === 'normal') {
+                player.dy = 0;
+                player.y = platform.y - player.height;
+                player.onGround = true;
+                player.jumps = 0; // Reset jumps when on the ground
+            } else if (platform.type === 'killer') {
+                deathSound.play();
+                resetPlayer();
+            }
         }
     });
 
@@ -110,6 +137,13 @@ function detectCollisions() {
         player.onGround = true;
         player.jumps = 0; // Reset jumps when on the ground
     }
+}
+
+function resetPlayer() {
+    player.x = 50;
+    player.y = 550;
+    player.dx = 0;
+    player.dy = 0;
 }
 
 function detectDoor() {
